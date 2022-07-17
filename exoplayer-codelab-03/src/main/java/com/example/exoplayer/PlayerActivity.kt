@@ -17,22 +17,31 @@ package com.example.exoplayer
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
+import androidx.media3.common.Player
 import androidx.media3.common.util.Util
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import com.example.exoplayer.databinding.ActivityPlayerBinding
+import timber.log.Timber
+import timber.log.Timber.*
+
 
 /**
  * A fullscreen activity to play audio or video streams.
  */
+
+
 class PlayerActivity : AppCompatActivity() {
+
+    private val logger: Player.Listener by lazy(LazyThreadSafetyMode.NONE) {
+        PlayBackLoggerListenerFactory()
+    }
 
     private val viewBinding by lazy(LazyThreadSafetyMode.NONE) {
         ActivityPlayerBinding.inflate(layoutInflater)
@@ -45,6 +54,9 @@ class PlayerActivity : AppCompatActivity() {
     private var playbackPosition = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        if (BuildConfig.DEBUG) {
+            Timber.plant(DebugTree())
+        }
         super.onCreate(savedInstanceState)
         setContentView(viewBinding.root)
     }
@@ -95,6 +107,7 @@ class PlayerActivity : AppCompatActivity() {
                 exoPlayer.setMediaItem(mediaItem)
                 exoPlayer.playWhenReady = playWhenReady
                 exoPlayer.seekTo(currentItem, playbackPosition)
+                exoPlayer.addListener(logger)
                 exoPlayer.prepare()
             }
     }
@@ -114,7 +127,10 @@ class PlayerActivity : AppCompatActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowInsetsControllerCompat(window, viewBinding.videoView).let { controller ->
             controller.hide(WindowInsetsCompat.Type.systemBars())
-            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            controller.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
     }
+
+
 }
