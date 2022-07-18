@@ -5,7 +5,7 @@ android {
     compileSdkVersion 32
 
     defaultConfig {
-        applicationId "com.example.exoplayercodelab"
+        applicationId "com.example.exoplayer"
         minSdkVersion 23
         targetSdkVersion 32
         versionCode 1

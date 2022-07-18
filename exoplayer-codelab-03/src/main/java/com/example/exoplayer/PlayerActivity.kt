@@ -17,6 +17,7 @@ package com.example.exoplayer
 
 import android.annotation.SuppressLint
 import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.MotionEvent
@@ -33,6 +34,9 @@ import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import com.example.exoplayer.databinding.ActivityPlayerBinding
 import timber.log.Timber
 import timber.log.Timber.*
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
 
 
 /**
@@ -42,16 +46,13 @@ import timber.log.Timber.*
 
 class PlayerActivity : AppCompatActivity() {
 
-    private val logger: Player.Listener by lazy(LazyThreadSafetyMode.NONE) {
-        PlayBackLoggerListenerFactory()
-    }
+    private var logger: Player.Listener? = null
 
     private val viewBinding by lazy(LazyThreadSafetyMode.NONE) {
         ActivityPlayerBinding.inflate(layoutInflater)
     }
 
     private var player: ExoPlayer? = null
-    private var openAlert = false
     private var playWhenReady = true
     private var currentItem = 0
     private var playbackPosition = 0L
@@ -65,48 +66,14 @@ class PlayerActivity : AppCompatActivity() {
 
         viewBinding.videoView.setOnTouchListener { view, motionEvent ->
             Timber.tag("PlayerActivity").d("Pointer Count : ${motionEvent.pointerCount}")
-            if (motionEvent.pointerCount === 3) {
-
-                //
-                // showAlert()
-                createIntent()
+            if (motionEvent.pointerCount == 3) {
+                (logger as PlayBackLoggerListenerFactory).exportVideoLog()
             }
-            true
+            view.performClick()
+            super.onTouchEvent(motionEvent)
         }
     }
 
-    private fun createIntent() {
-        val sendIntent: Intent = Intent().apply {
-            action = Intent.ACTION_SEND
-            putExtra(Intent.EXTRA_TEXT, "This is my text to send.")
-            type = "application/json"
-        }
-
-        val shareIntent = Intent.createChooser(sendIntent, null)
-        startActivity(shareIntent)
-    }
-
-    private fun showAlert() {
-        if (!openAlert) {
-            val builder: AlertDialog.Builder = AlertDialog.Builder(this)
-
-            // Set the message show for the Alert time
-
-            // Set the message show for the Alert time
-            builder.setMessage("Do you want to exit ?")
-
-            // Set Alert Title
-
-            // Set Alert Title
-            builder.setTitle("Alert !")
-            builder.setOnCancelListener {
-                openAlert = false
-            }
-            openAlert = true
-            builder.create().show()
-
-        }
-    }
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         event?.let {
@@ -176,7 +143,8 @@ class PlayerActivity : AppCompatActivity() {
 
                 exoPlayer.playWhenReady = playWhenReady
                 exoPlayer.seekTo(currentItem, playbackPosition)
-                exoPlayer.addListener(logger)
+                logger = PlayBackLoggerListenerFactory(this)
+                exoPlayer.addListener(logger as PlayBackLoggerListenerFactory)
                 exoPlayer.prepare()
             }
     }

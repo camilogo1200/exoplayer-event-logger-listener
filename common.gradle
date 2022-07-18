@@ -10,7 +10,6 @@ android {
         targetSdkVersion parent.ext.targetSdkVersion
 
         consumerProguardFiles 'proguard-rules.pro'
-
         versionCode 1
         versionName "1.0"
 
