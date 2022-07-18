@@ -16,7 +16,10 @@
 package com.example.exoplayer
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
+import android.content.Intent
 import android.os.Bundle
+import android.view.MotionEvent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -48,7 +51,7 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private var player: ExoPlayer? = null
-
+    private var openAlert = false
     private var playWhenReady = true
     private var currentItem = 0
     private var playbackPosition = 0L
@@ -59,6 +62,57 @@ class PlayerActivity : AppCompatActivity() {
         }
         super.onCreate(savedInstanceState)
         setContentView(viewBinding.root)
+
+        viewBinding.videoView.setOnTouchListener { view, motionEvent ->
+            Timber.tag("PlayerActivity").d("Pointer Count : ${motionEvent.pointerCount}")
+            if (motionEvent.pointerCount === 3) {
+
+                //
+                // showAlert()
+                createIntent()
+            }
+            true
+        }
+    }
+
+    private fun createIntent() {
+        val sendIntent: Intent = Intent().apply {
+            action = Intent.ACTION_SEND
+            putExtra(Intent.EXTRA_TEXT, "This is my text to send.")
+            type = "application/json"
+        }
+
+        val shareIntent = Intent.createChooser(sendIntent, null)
+        startActivity(shareIntent)
+    }
+
+    private fun showAlert() {
+        if (!openAlert) {
+            val builder: AlertDialog.Builder = AlertDialog.Builder(this)
+
+            // Set the message show for the Alert time
+
+            // Set the message show for the Alert time
+            builder.setMessage("Do you want to exit ?")
+
+            // Set Alert Title
+
+            // Set Alert Title
+            builder.setTitle("Alert !")
+            builder.setOnCancelListener {
+                openAlert = false
+            }
+            openAlert = true
+            builder.create().show()
+
+        }
+    }
+
+    override fun onTouchEvent(event: MotionEvent?): Boolean {
+        event?.let {
+            Timber.tag("PlayerActivity").d("-----")
+        }
+        return true
     }
 
     public override fun onStart() {
@@ -105,6 +159,21 @@ class PlayerActivity : AppCompatActivity() {
                     .setMimeType(MimeTypes.APPLICATION_MPD)
                     .build()
                 exoPlayer.setMediaItem(mediaItem)
+
+                val mediaItem2 = MediaItem
+                    .fromUri("https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd")
+
+                exoPlayer.addMediaItem(mediaItem2)
+                val mediaItem3 = MediaItem
+                    .fromUri("https://dash.akamaized.net/digitalprimates/fraunhofer/480p_video/heaac_2_0_with_video/Sintel/sintel_480p_heaac2_0.mpd")
+
+                exoPlayer.addMediaItem(mediaItem3)
+                val mediaItem4 = MediaItem
+                    .fromUri("https://livesim.dashif.org/livesim/scte35_2/testpic_2s/Manifest.mpd")
+                exoPlayer.addMediaItem(mediaItem4)
+
+
+
                 exoPlayer.playWhenReady = playWhenReady
                 exoPlayer.seekTo(currentItem, playbackPosition)
                 exoPlayer.addListener(logger)

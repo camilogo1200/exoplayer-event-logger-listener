@@ -9,7 +9,7 @@ import java.util.*
 import java.util.concurrent.ConcurrentLinkedDeque
 
 
-private val TAG = PlayBackLoggerListenerFactory::class.java.name
+private const val TAG = "EventLogger"
 
 class PlayBackLoggerListenerFactory : Player.Listener {
     private val logs = ConcurrentLinkedDeque<PlaybackLog>()
@@ -28,7 +28,7 @@ class PlayBackLoggerListenerFactory : Player.Listener {
 
         Timber.tag(TAG).d(message)
         val event = PlaybackLog(message, "onPlaybackStateChanged")
-        logs.addFirst(event)
+        logs.addLast(event)
     }
 
     override fun onPlayerError(error: PlaybackException) {
@@ -37,7 +37,7 @@ class PlayBackLoggerListenerFactory : Player.Listener {
         val message = if (cause is HttpDataSourceException) {
             when (cause) {
                 is InvalidContentTypeException -> {
-                    "ExoPlayer - InvalidContentTypeException - contentType => ${cause.contentType}"
+                    "ExoPlayer - InvalidContentTypeException - contentType => [${cause.contentType}]"
                 }
                 is InvalidResponseCodeException -> {
                     "InvalidResponseCodeException - responseCode => [${cause.responseCode}] - ${cause.message}"
@@ -56,7 +56,7 @@ class PlayBackLoggerListenerFactory : Player.Listener {
         Timber.tag(TAG).d(message)
         val event = PlaybackLog(message, "onPlayerError - $codeError")
 
-        logs.addFirst(event)
+        logs.addLast(event)
     }
 
     override fun onPositionDiscontinuity(
@@ -73,7 +73,7 @@ class PlayBackLoggerListenerFactory : Player.Listener {
         val event =
             PlaybackLog(message, "onPositionDiscontinuity - DiscontinuityReason => [$reason]")
 
-        logs.addFirst(event)
+        logs.addLast(event)
     }
 
     override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -83,7 +83,41 @@ class PlayBackLoggerListenerFactory : Player.Listener {
     }
 
     override fun onTracksChanged(tracks: Tracks) {
-        super.onTracksChanged(tracks)
+
+        val groupSize = tracks.groups.size
+
+        val message = buildString {
+            append("Tracks group size => [$groupSize] \n")
+
+            if (groupSize > 0) {
+                for (iter in tracks.groups.withIndex()) {
+                    val group = iter.value
+                    appendLine("Track : [${iter.index}]")
+                    append("TrackType => [${group.type}] - ")
+                    append("Supported [${if (group.isSupported) "Yes" else "No"}] - ")
+                    append("Length => [${group.length}] - ")
+                    appendLine("Is Selected - ${group.isSelected}")
+
+                    appendLine("Format :")
+                    for (i in 0 until group.mediaTrackGroup.length) {
+                        val format = group.getTrackFormat(i)
+                        append("{")
+                        append(" Id - [${format.id}]")
+                        append(" Bitrate - [${format.bitrate}]")
+                        append(" Codecs - [${format.codecs}]")
+                        append(" Dimensions - [height:${format.height}| width:${format.width}]")
+                        append(" FrameRate - [${format.frameRate}]")
+                        append(" SampleRate - [${format.sampleRate}]")
+                        append(" Label - [${format.label}]")
+                        appendLine("}")
+                    }
+                }
+            }
+        }
+        Timber.tag(TAG).d(message)
+        val event = PlaybackLog(message, "onTracksChanged")
+        logs.addLast(event)
+
     }
 
     override fun onIsLoadingChanged(isLoading: Boolean) {
